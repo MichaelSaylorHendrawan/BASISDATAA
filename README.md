@@ -48,6 +48,42 @@ php artisan key:generate
 php artisan migrate:fresh --seed
 ```
 
+---
+
+## Topgolf Database (Branches — Tiers — Members) 🔧
+
+This project includes an optional **Topgolf** schema (three tables: `branches`, `membership_tiers`, `members`) and a seeder that can generate **500,000** dummy members efficiently.
+
+**Setup notes:**
+- Set DB connection to MySQL in `.env` (example):
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=Topgolf
+DB_USERNAME=root
+DB_PASSWORD=
+```
+- If you want the fastest import use MySQL's `LOAD DATA LOCAL INFILE`. Ensure the server and client allow `local_infile` (MySQL option).
+
+**How the seeder works:**
+- `BranchSeeder` and `MembershipTierSeeder` create master data (a few rows).
+- `MemberSeeder` generates `topgolf_members.csv` (500k rows) in `storage/app/` and then attempts `LOAD DATA LOCAL INFILE`. If that fails, it falls back to chunked multi-row inserts.
+
+**Commands**
+```bash
+# Run only the Topgolf seeders (after setting DB env to use MySQL)
+php artisan db:seed --class=BranchSeeder
+php artisan db:seed --class=MembershipTierSeeder
+# This will create the CSV and attempt fast bulk import (may require `local_infile` enabled)
+php artisan db:seed --class=MemberSeeder
+```
+
+**Tip:** On slower environments you can reduce the `500000` value in `MemberSeeder` during testing.
+
+---
+
+
 5. **Build Assets & Start Development**
 ```bash
 # Terminal 1: Frontend assets

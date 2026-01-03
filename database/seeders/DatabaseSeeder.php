@@ -19,6 +19,10 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             UserSeeder::class,
             ProductSeeder::class,
+            // Topgolf schema seeders
+            BranchSeeder::class,
+            MembershipTierSeeder::class,
+            MemberSeeder::class,
         ]);
     }
 }
