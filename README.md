@@ -24,7 +24,7 @@ Experience the complete authorization system in action!
 
 1. **Clone & Install Dependencies**
 ```bash
-git clone https://github.com/mmrahmanwritescode/laravel-custom-inertia-authorization
+git clone https://github.com/MichaelSaylorHendrawan/BASISDATAA
 cd laravel-custom-inertia-authorization
 composer install
 npm install
