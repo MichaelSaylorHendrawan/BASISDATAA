@@ -4,113 +4,72 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Faker\Factory as Faker;
 
 class MemberSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $total = 500000; // 500k members
+        // 1. PENGATURAN AGRESIF UNTUK RAM
+        DB::connection()->disableQueryLog(); // Matikan log query agar RAM tidak bengkak
+        set_time_limit(0);
+        ini_set('memory_limit', '1G'); // Usahakan naikkan ke 1GB jika bisa
 
-        $branches = DB::table('branches')->pluck('branch_id')->toArray();
-        $tiers = DB::table('membership_tiers')->pluck('tier_id')->toArray();
+        $total = 500000;
+        $csvPath = storage_path('app/topgolf_members.csv');
 
-        if (empty($branches) || empty($tiers)) {
-            $this->command->error('You must seed branches and membership_tiers first.');
+        // Jika file CSV belum ada, buat dulu (logika Anda sudah benar di sini)
+        if (!file_exists($csvPath)) {
+            $this->command->error("File CSV tidak ditemukan!");
             return;
         }
 
-        $this->command->info("Generating $total members to CSV (storage/app/topgolf_members.csv)...");
+        $this->command->info('Memulai insertOrIgnore dari CSV (Batch Mode)...');
 
-        $csvPath = storage_path('app/topgolf_members.csv');
-        $fp = fopen($csvPath, 'w');
+        $handle = fopen($csvPath, 'r');
+        $batch = [];
+        $batchSize = 1000; // Kecilkan batch agar memori stabil
+        $count = 0;
 
-        $faker = Faker::create();
+        while (($row = fgetcsv($handle)) !== false) {
+            // Pastikan data valid
+            if (count($row) < 8) continue; 
 
-        // Write rows directly to CSV to avoid memory pressure
-        for ($i = 1; $i <= $total; $i++) {
-            $branch_id = $branches[array_rand($branches)];
-            $tier_id = $tiers[array_rand($tiers)];
-            $first = $faker->firstName();
-            $last = $faker->lastName();
-            // deterministic unique email to avoid unique conflicts and avoid Faker->unique memory usage
-            $email = "member{$i}@topgolf.com";
-            $phone = preg_replace('/[^0-9+]/', '', $faker->phoneNumber());
-            $phone = substr($phone, 0, 20);
-            $join_date = $faker->dateBetween('-3 years', 'now')->format('Y-m-d');
-            $status = ['Active', 'Inactive', 'Suspended'][array_rand([0,1,2])];
+            $batch[] = [
+                'branch_id'  => $row[0],
+                'tier_id'    => $row[1],
+                'first_name' => $row[2],
+                'last_name'  => $row[3],
+                'email'      => $row[4],
+                'phone'      => $row[5],
+                'join_date'  => $row[6],
+                'status'     => $row[7],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
 
-            fputcsv($fp, [$branch_id, $tier_id, $first, $last, $email, $phone, $join_date, $status]);
-
-            // occasional progress log (every batch-sized chunk)
-            if ($i % 10000 === 0) {
-                $this->command->info("...written $i rows");
-            }
-        }
-
-        fclose($fp);
-
-        $this->command->info('CSV generation completed. Attempting bulk import via LOAD DATA LOCAL INFILE (fast) ...');
-
-        $connection = DB::connection()->getPDO();
-        $escaped = str_replace("\\", "\\\\", $csvPath); // escape backslashes on Windows
-
-        try {
-            // Use LOCAL so the client sends the file (works for many dev setups)
-            $sql = "LOAD DATA LOCAL INFILE '" . addslashes($escaped) . "' INTO TABLE members FIELDS TERMINATED BY ',' ENCLOSED BY '" . "'" . " LINES TERMINATED BY '\n' (branch_id, tier_id, first_name, last_name, email, phone, join_date, status);";
-
-            DB::unprepared($sql);
-
-            $this->command->info('Bulk import completed via LOAD DATA LOCAL INFILE.');
-        } catch (\Throwable $e) {
-            // Fallback: batch insert from CSV in chunks
-            $this->command->warn('LOAD DATA failed: ' . $e->getMessage());
-            $this->command->info('Falling back to chunked inserts (this may take a while)...');
-
-            $handle = fopen($csvPath, 'r');
-            $batch = [];
-            $batchSize = 10000;
-            $count = 0;
-
-            while (($row = fgetcsv($handle)) !== false) {
-                [$branch_id, $tier_id, $first, $last, $email, $phone, $join_date, $status] = $row;
-                $batch[] = [
-                    'branch_id' => $branch_id,
-                    'tier_id' => $tier_id,
-                    'first_name' => $first,
-                    'last_name' => $last,
-                    'email' => $email,
-                    'phone' => $phone,
-                    'join_date' => $join_date,
-                    'status' => $status,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-
-                if (count($batch) >= $batchSize) {
-                    DB::table('members')->insert($batch);
-                    $count += count($batch);
-                    $batch = [];
-                    $this->command->info("Inserted $count rows...");
-                }
-            }
-
-            if (!empty($batch)) {
-                DB::table('members')->insert($batch);
+            if (count($batch) >= $batchSize) {
+                // Gunakan insertOrIgnore agar data duplikat dilewati otomatis
+                DB::table('members')->insertOrIgnore($batch);
+                
                 $count += count($batch);
-                $this->command->info("Inserted $count rows. (final)");
-            }
+                if ($count % 10000 === 0) {
+                    $this->command->info("Telah memasukkan $count data...");
+                }
 
-            fclose($handle);
+                // KUNCI UTAMA: Kosongkan array dan bebaskan memori
+                unset($batch);
+                $batch = []; 
+            }
         }
 
-        // optional: remove the CSV file after import
-        // @unlink($csvPath);
+        // Insert sisa data yang belum ter-batch
+        if (!empty($batch)) {
+            DB::table('members')->insertOrIgnore($batch);
+            $count += count($batch);
+        }
 
-        $this->command->info('Member seeding finished.');
+        fclose($handle);
+        $this->command->info("Selesai! Total $count baris diproses.");
     }
 }
