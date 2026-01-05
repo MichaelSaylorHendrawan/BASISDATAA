@@ -40,10 +40,10 @@
             </Link>
 
             <!-- Role-based Products link -->
-            <Link v-if="canViewProducts" :href="route('products.index')" class="side-bar-item" :class="{ active: isActiveRoute('products.index') }" @click="setActiveMenu(route('products.index'))">
-                <span class="side-bar-item-icon"><i class="fa fa-box"/></span>
-                <span class="side-bar-item-caption">Products</span>
-            </Link>   
+<Link v-if="canViewMembers" :href="route('members.index')" class="side-bar-item" :class="{ active: isActiveRoute('members.index') }" @click="setActiveMenu(route('members.index'))">
+    <span class="side-bar-item-icon"><i class="fa fa-box"/></span>
+    <span class="side-bar-item-caption">Members</span>
+</Link>
             
             <!-- Role & Permission Management (Admin Only) -->
             <div v-if="canViewRoles || canViewPermissions" class="sidebar-divider"></div>

@@ -9,6 +9,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\SessionAuthenticate;
+use App\Http\Controllers\MemberController;
 
 // Public routes
 Route::get('/', fn() => redirect()->route('LoginPage') );
@@ -76,4 +77,12 @@ Route::middleware([SessionAuthenticate::class])->group(function () {
         Route::put('/{permission}', 'update')->middleware('permission:edit-permission')->name('update');
         Route::delete('/{permission}', 'destroy')->middleware('permission:delete-permission')->name('destroy');
     });
+
+    // Tambahkan di dalam group protected (di bagian yang sama dengan routes products/users)
+Route::controller(MemberController::class)->prefix('members')->name('members.')->group(function () {
+    Route::get('/', 'index')->middleware('permission:view-user')->name('index');
+    // jika butuh edit/delete:
+Route::get('/{member}/edit', 'edit')->middleware('permission:edit-member')->name('edit');
+Route::delete('/{member}', 'destroy')->middleware('permission:delete-member')->name('destroy');
+});
 });
