@@ -88,6 +88,8 @@ const isAdmin = computed(() => userRole.value === 'admin');
 // Check permissions
 const canViewUsers = computed(() => permissions.value.includes('view-user'));
 const canViewProducts = computed(() => permissions.value.includes('view-product'));
+const canViewMembers = computed(() => permissions.value.includes('view-member'));
+const canViewMemershipTier = computed(() => permissions.value.includes('view-membershiptier'));
 const canViewRoles = computed(() => permissions.value.includes('view-role'));
 const canViewPermissions = computed(() => permissions.value.includes('view-permission'));
 
