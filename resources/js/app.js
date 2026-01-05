@@ -5,6 +5,7 @@ import 'bootstrap'
 import('@/Assets/css/main.css')
 import('@fortawesome/fontawesome-free/css/all.css');
 import { ZiggyVue } from 'ziggy-js';
+const pages = import.meta.glob('./Pages/**/*.vue')
 
 createInertiaApp({
     resolve: name => {

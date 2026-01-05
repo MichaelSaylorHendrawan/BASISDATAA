@@ -79,10 +79,12 @@ Route::middleware([SessionAuthenticate::class])->group(function () {
     });
 
     // Tambahkan di dalam group protected (di bagian yang sama dengan routes products/users)
-Route::controller(MemberController::class)->prefix('members')->name('members.')->group(function () {
-    Route::get('/', 'index')->middleware('permission:view-user')->name('index');
-    // jika butuh edit/delete:
-Route::get('/{member}/edit', 'edit')->middleware('permission:edit-member')->name('edit');
-Route::delete('/{member}', 'destroy')->middleware('permission:delete-member')->name('destroy');
-});
+Route::controller(MemberController::class)
+    ->prefix('members')
+    ->name('members.')
+    ->group(function () {
+        Route::get('/', 'index')->middleware('permission:view-member')->name('index');
+        Route::get('/{member}/edit', 'edit')->middleware('permission:edit-member')->name('edit');
+        Route::delete('/{member}', 'destroy')->middleware('permission:delete-member')->name('destroy');
+        });
 });

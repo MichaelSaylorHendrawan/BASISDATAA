@@ -41,7 +41,7 @@
 
             <!-- Role-based Products link -->
 <Link v-if="canViewMembers" :href="route('members.index')" class="side-bar-item" :class="{ active: isActiveRoute('members.index') }" @click="setActiveMenu(route('members.index'))">
-    <span class="side-bar-item-icon"><i class="fa fa-box"/></span>
+    <span class="side-bar-item-icon"><i class="fa fa-user-friends"/></span>
     <span class="side-bar-item-caption">Members</span>
 </Link>
             
@@ -81,6 +81,7 @@ const page = usePage();
 const user = computed(() => page.props.auth?.user || null);
 const userRole = computed(() => user.value?.role || 'user');
 const permissions = computed(() => page.props.can || []);
+permissions.value.includes('view-member') // FALSE
 
 // Check if user is admin
 const isAdmin = computed(() => userRole.value === 'admin');
